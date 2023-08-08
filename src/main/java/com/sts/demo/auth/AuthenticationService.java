@@ -37,8 +37,8 @@ public class AuthenticationService {
 		this.authenticationManager=authenticationManager;
 	}
 
-	public AuthenticationResponse register(RegisterRequest request) {
-		User user = User.builder()
+	  public AuthenticationResponse register(RegisterRequest request) {
+		/*User user = User.builder()
 		        .firstname(request.getFirstname())
 		        .lastname(request.getLastname())
 		        .email(request.getEmail())
@@ -50,21 +50,18 @@ public class AuthenticationService {
 		 
 		    var savedUser = repository.save(user);
 		    
+		    */
+		    var jwtToken = jwtService.generateToken(null);
 		    
-		    var jwtToken = jwtService.generateToken(user);
 		    
-		    
-		    
-		  
-		    return AuthenticationResponse.builder()
-		        .accessToken(jwtToken)
-		             
-		        .build();
+		    AuthenticationResponse result = new  AuthenticationResponse();
+		    result.setToken(jwtToken);
+		    return result;
 	}
 
-	public AuthenticationResponse authenticate(RegisterRequest request) {
+	 public AuthenticationResponse authenticate(RegisterRequest request) {
 		 authenticationManager.authenticate(
-			        new UsernamePasswordAuthenticationToken(
+		       new UsernamePasswordAuthenticationToken(
 			            request.getEmail(),
 			            request.getPassword()
 			        )
@@ -73,11 +70,9 @@ public class AuthenticationService {
 			        .orElseThrow();
 			    var jwtToken = jwtService.generateToken(user);
 			   
-			     
-			    return AuthenticationResponse.builder()
-			        .accessToken(jwtToken)
-			           
-			        .build();
+			    AuthenticationResponse result = new  AuthenticationResponse();
+			    result.setToken(jwtToken);
+			    return result;
 	}
 
 }

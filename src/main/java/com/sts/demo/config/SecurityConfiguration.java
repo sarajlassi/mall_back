@@ -52,20 +52,28 @@ public class SecurityConfiguration {
 	  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		http
+		.securityMatcher("/")
 		.csrf()
 		.disable()
-		.authorizeHttpRequests()
-		.requestMatchers("/api/v1/auth//** ")
-		.permitAll()
-		.anyRequest()
-		.authenticated()
-		.and()
-		.sessionManagement()
-		.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-		.and()
-		.authenticationProvider(authentificationProvider)
-		.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+		  .authorizeHttpRequests(
+				    (request) -> {
+				    	try {
+				    		request.requestMatchers("/api/v1/auth/** ").permitAll()
+					    	.anyRequest()
+							.authenticated()
+							.and()
+							.sessionManagement()
+							.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+				    	} catch (Exception e) {
+		                    throw new RuntimeException(e);
+		                  }
+				    })
 		
+		
+
+		.authenticationProvider(authentificationProvider)
+		.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+		.httpBasic();
 		
 		return http.build();	
 	}
