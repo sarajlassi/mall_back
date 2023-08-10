@@ -16,7 +16,12 @@ public class CategoryService {
 	@Autowired 
 	
 	public CategoryRepository categoryRepository;
-	
+	public Category addCategory(Category category) {
+        return categoryRepository.save(category);
+    }
+	 public Optional<Category> getCategoryById(Long id) {
+	        return categoryRepository.findById(id);
+	    }
 	public List<Category> getCategories(){
 		List<Category> category = new ArrayList<Category>();  
 		categoryRepository.findAll().forEach(category1 -> category.add(category1));  
@@ -27,22 +32,14 @@ public class CategoryService {
 		  categoryRepository.findByNameCategory(nameCategory).forEach(category1 -> categoryfind.add(category1));
 		  return categoryfind;
 	} 
-	 public Optional<Category> getCategoryById(Long id) {
+	  public void deleteCategory(Long id) {
+	        categoryRepository.deleteById(id);
+	    }
+	  public Optional<Category> getCategoryById1(Long id) {
 	        return categoryRepository.findById(id);
 	    }
-	public void saveOrUpdate(Category category)   
-	{  
-		categoryRepository.save(category);  
-	}  
 
-	public void delete(Long idCategory)   
-	{  
-		categoryRepository.deleteById(idCategory);  
-	}  
-
-	  public Category updateCategory(Category updatedCategory) {
+	    public Category updateCategory(Category updatedCategory) {
 	        return categoryRepository.save(updatedCategory);
 	    }
-	
 }
-
