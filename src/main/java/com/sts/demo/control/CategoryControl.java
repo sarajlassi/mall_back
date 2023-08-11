@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -108,21 +109,29 @@ public class CategoryControl {
 	        }
 	    }
 	 @PutMapping("update/{id}")
-	    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category updatedCategory) {
-	        Optional<Category> categoryOptional = categoryservice.getCategoryById(id);
+	 public ResponseEntity<Category> updateCategory(@PathVariable Long id, @ModelAttribute Category updatedCategory,
+	                                                 @RequestParam(name = "newImage", required = false) MultipartFile newImage) {
+	     Optional<Category> categoryOptional = categoryservice.getCategoryById(id);
 
-	        if (categoryOptional.isPresent()) {
-	            Category category = categoryOptional.get();
-	            category.setNameCategory(updatedCategory.getNameCategory());
-	            category.setImageCategory(updatedCategory.getImageCategory());
+	     if (categoryOptional.isPresent()) {
+	         Category category = categoryOptional.get();
+	         category.setNameCategory(updatedCategory.getNameCategory());
 
-	            // Save the updated category
-	            Category savedCategory = categoryservice.updateCategory(category);
+	         if (newImage != null && !newImage.isEmpty()) {
+	             try {
+	                 String imageUrl = saveImage(newImage);
+	                 category.setImageCategory(imageUrl);
+	             } catch (IOException e) {
+	                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	             }
+	         }
 
-	            return new ResponseEntity<>(savedCategory, HttpStatus.OK);
-	        } else {
-	            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	        }
-	    }
+	         Category savedCategory = categoryservice.updateCategory(category);
+
+	         return new ResponseEntity<>(savedCategory, HttpStatus.OK);
+	     } else {
+	         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	     }
+	 }
 	
 }

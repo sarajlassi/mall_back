@@ -42,13 +42,13 @@ import com.sts.demo.service.ShopService;
 @CrossOrigin(origins = "http://localhost:4200")
 public class ShopControl {
 @Autowired
-public final ShopService shopService;
- 
+private final ShopService shopService;
+private final CategoryService categoryService;
 
-public ShopControl(ShopService shopService ) {
-	super();
-	this.shopService = shopService;
-	 
+@Autowired
+public ShopControl(ShopService shopService, CategoryService categoryService) {
+    this.shopService = shopService;
+    this.categoryService = categoryService;
 }
 @GetMapping("shops")
 public List<Shop> getShops(){
@@ -78,17 +78,18 @@ private String saveImage(MultipartFile image) throws IOException {
 @PostMapping("/add")
 public ResponseEntity<Shop> addShop(@RequestParam("image") MultipartFile image,
                                     @RequestParam("nameShop") String nameShop,
-                                    @RequestParam("localisationShop") String localisationShop,
+                                    @RequestParam("localisationShop") MultipartFile localisationShop,
                                     @RequestParam("idCategory") Long idCategory) {
     try {
         String imageUrl = saveImage(image);
+        String localisationUrl = saveImage(localisationShop); 
 
         Category category = new Category();
         category.setIdCategory(idCategory);
 
         Shop shop = new Shop();
         shop.setNameShop(nameShop);
-        shop.setLocalisationShop(localisationShop);
+        shop.setLocalisationShop(localisationUrl); 
         shop.setCategory(category);
         shop.setImageShop(imageUrl);
 
@@ -99,8 +100,6 @@ public ResponseEntity<Shop> addShop(@RequestParam("image") MultipartFile image,
         return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).build();
     }
 }
-
-
 @GetMapping("/images/{imageName:.+}")
 public ResponseEntity<Resource> getImage(@PathVariable String imageName) throws IOException {
     Path imagePath = Paths.get("C:\\Users\\DELL\\Downloads").resolve(imageName);
@@ -133,9 +132,52 @@ public ResponseEntity<Void> deleteshop(@PathVariable Integer id) {
     }
 }
 @PutMapping("update/{id}")
-public ResponseEntity<Shop> updateShop(@PathVariable int id, @RequestBody Shop updatedShop) {
-    Shop updatedShopEntity = shopService.updateShop(id, updatedShop);
-    return ResponseEntity.ok(updatedShopEntity);
+public ResponseEntity<Shop> updateShop(
+        @PathVariable int id,
+        @RequestParam(name = "newImage", required = false) MultipartFile newImage,
+        @RequestParam(name = "newLocalisationImage", required = false) MultipartFile newLocalisationImage,
+        @ModelAttribute Shop updatedShop
+) {
+    Optional<Shop> shopOptional = shopService.getShopById(id);
+
+    if (shopOptional.isPresent()) {
+        Shop shop = shopOptional.get();
+        shop.setNameShop(updatedShop.getNameShop());
+        shop.setLocalisationShop(updatedShop.getLocalisationShop());
+
+        // Update the category if it's provided in the updatedShop
+        if (updatedShop.getCategory() != null) {
+            Category category = categoryService.getCategoryById(updatedShop.getCategory().getIdCategory())
+                    .orElseThrow();
+
+            shop.setCategory(category);
+        }
+
+        if (newImage != null && !newImage.isEmpty()) {
+            try {
+                String imageUrl = saveImage(newImage);
+                shop.setImageShop(imageUrl);
+            } catch (IOException e) {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        if (newLocalisationImage != null && !newLocalisationImage.isEmpty()) {
+            try {
+                String localisationImageUrl = saveImage(newLocalisationImage);
+                shop.setLocalisationShop(localisationImageUrl);
+            } catch (IOException e) {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        // Save the updated shop
+        Shop savedShop = shopService.updateShop(id, shop);
+
+        return ResponseEntity.ok(savedShop);
+    } else {
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 }
-  
+
 }

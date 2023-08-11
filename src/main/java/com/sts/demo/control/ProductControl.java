@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -120,10 +121,32 @@ public class ProductControl {
 	        }
 	    }
 	 @PutMapping("update/{productId}")
-	    public ResponseEntity<Product> updateProduct(@PathVariable int productId, @RequestBody Product updatedProduct) {
-	        updatedProduct.setIdProduct(productId);
-	        Product updatedProductResult = productservice.updateProduct(updatedProduct);
-	        return ResponseEntity.ok(updatedProductResult);
-	    }
-	    }
+	 public ResponseEntity<Product> updateProduct(@PathVariable int productId, @ModelAttribute Product updatedProduct,
+	                                              @RequestParam(name = "newImage", required = false) MultipartFile newImage) {
+	     Optional<Product> productOptional = productservice.getProductById(productId);
+
+	     if (productOptional.isPresent()) {
+	         Product product = productOptional.get();
+	         product.setNameProduct(updatedProduct.getNameProduct());
+	         product.setPrice(updatedProduct.getPrice());
+	         product.setShop(updatedProduct.getShop());
+	         product.setDescriptionProduct(updatedProduct.getDescriptionProduct());
+
+	         if (newImage != null && !newImage.isEmpty()) {
+	             try {
+	                 String imageUrl = saveImage(newImage);
+	                 product.setImageProduct(imageUrl);
+	             } catch (IOException e) {
+	                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	             }
+	         }
+
+	         // Save the updated product
+	         Product savedProduct = productservice.updateProduct(product);
+
+	         return new ResponseEntity<>(savedProduct, HttpStatus.OK);
+	     } else {
+	         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	     }
+	 }}
 	 
